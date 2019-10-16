@@ -3,13 +3,13 @@ abstract type AbstractOperationModel end
 struct DefaultOpModel<:AbstractOperationModel end
 
 mutable struct ModelReference
-    transmission::Type{<:PM.AbstractPowerFormulation}
+    transmission::Type{<:PM.AbstractPowerModel}
     devices::Dict{Symbol, DeviceModel}
     branches::Dict{Symbol, DeviceModel}
     services::Dict{Symbol, ServiceModel}
 end
 
-function ModelReference(::Type{T}) where {T<:PM.AbstractPowerFormulation}
+function ModelReference(::Type{T}) where {T<:PM.AbstractPowerModel}
 
     return  ModelReference(T,
                            Dict{Symbol, DeviceModel}(),
@@ -19,7 +19,6 @@ function ModelReference(::Type{T}) where {T<:PM.AbstractPowerFormulation}
 end
 
 mutable struct OperationModel{M<:AbstractOperationModel}
-    op_model::Type{M}
     model_ref::ModelReference
     sys::PSY.System
     canonical::CanonicalModel
@@ -30,7 +29,7 @@ function OperationModel(::Type{M},
                         sys::PSY.System;
                         optimizer::Union{Nothing, JuMP.OptimizerFactory}=nothing,
                         kwargs...) where {M<:AbstractOperationModel,
-                                          T<:PM.AbstractPowerFormulation}
+                                          T<:PM.AbstractPowerModel}
 
     verbose = get(kwargs, :verbose, true)
     canonical = _build_canonical(model_ref.transmission,
@@ -42,20 +41,19 @@ function OperationModel(::Type{M},
                                 verbose;
                                 kwargs...)
 
-    return  OperationModel(M, model_ref, sys, canonical)
+    return  OperationModel{M}(model_ref, sys, canonical)
 
 end
 
-function OperationModel(op_model::Type{M},
+function OperationModel(::Type{M},
                         ::Type{T},
                         sys::PSY.System;
                         kwargs...) where {M<:AbstractOperationModel,
-                                          T<:PM.AbstractPowerFormulation}
+                                          T<:PM.AbstractPowerModel}
 
     optimizer = get(kwargs, :optimizer, nothing)
 
-    return OperationModel(op_model,
-                          ModelReference(T),
+    return OperationModel{M}(ModelReference(T),
                           sys,
                           CanonicalModel(T, sys, optimizer; kwargs...))
 
@@ -63,12 +61,10 @@ end
 
 function OperationModel(::Type{T},
                         sys::PSY.System;
-                        kwargs...) where {T<:PM.AbstractPowerFormulation}
+                        kwargs...) where {T<:PM.AbstractPowerModel}
 
 
-    return OperationModel(DefaultOpModel,
-                         T,
-                         sys; kwargs...)
+    return OperationModel{DefaultOpModel}(T, sys; kwargs...)
 
 end
 
@@ -79,7 +75,7 @@ get_services_ref(op_model::OperationModel) = op_model.model_ref.services
 get_system(op_model::OperationModel) = op_model.sys
 
 function set_transmission_ref!(op_model::OperationModel,
-                               transmission::Type{T}; kwargs...) where {T<:PM.AbstractPowerFormulation}
+                               transmission::Type{T}; kwargs...) where {T<:PM.AbstractPowerModel}
     op_model.model_ref.transmission = transmission
     build_op_model!(op_model; kwargs...)
     return
@@ -175,7 +171,7 @@ function construct_device!(op_model::OperationModel,
 end
 
 function get_initial_conditions(op_model::OperationModel)
-    return op_model.canonical.initial_conditions
+    return get_initial_conditions(canonical.initial_conditions)
 end
 
 function get_initial_conditions(op_model::OperationModel, ic::InitialConditionQuantity, device::PSY.Device)

@@ -11,7 +11,7 @@ export ModelReference
 export InitialCondition
 
 #Network Relevant Exports
-export StandardPTDFForm
+export StandardPTDFModel
 export CopperPlatePowerModel
 
 ######## Device Models ########
@@ -116,7 +116,6 @@ import InfrastructureSystems
 import PowerModels
 import RecipesBase
 import Requires
-
 
 #TimeStamp Management Imports
 import Dates

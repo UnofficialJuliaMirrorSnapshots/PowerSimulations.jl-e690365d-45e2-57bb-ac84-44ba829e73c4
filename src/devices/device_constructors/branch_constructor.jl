@@ -1,27 +1,17 @@
 
-function _internal_device_constructor!(canonical_model::CanonicalModel,
-                            model::DeviceModel{B, Br},
-                           ::Type{CopperPlatePowerModel},
-                           sys::PSY.System;
-                           kwargs...) where {B<:PSY.DCBranch,
-                                             Br<:AbstractBranchFormulation}
-    # This code is meant to do nothing
+_internal_device_constructor!(canonical_model::CanonicalModel,
+                              model::DeviceModel{B, Br},
+                              ::Type{CopperPlatePowerModel},
+                              sys::PSY.System;
+                               kwargs...) where {B<:PSY.DCBranch,
+                                                 Br<:AbstractBranchFormulation} = nothing
 
-    return
-
-end
-
-function _internal_device_constructor!(canonical_model::CanonicalModel,
-                           model::DeviceModel{B, Br},
-                           ::Type{CopperPlatePowerModel},
-                           sys::PSY.System;
-                           kwargs...) where {B<:PSY.ACBranch,
-                                             Br<:AbstractBranchFormulation}
-    # This code is meant to do nothing
-
-    return
-
-end
+_internal_device_constructor!(canonical_model::CanonicalModel,
+                              model::DeviceModel{B, Br},
+                              ::Type{CopperPlatePowerModel},
+                              sys::PSY.System;
+                              kwargs...) where {B<:PSY.ACBranch,
+                                                Br<:AbstractBranchFormulation} = nothing
 
 function _internal_device_constructor!(canonical_model::CanonicalModel,
                            model::DeviceModel{B, Br},
@@ -29,7 +19,7 @@ function _internal_device_constructor!(canonical_model::CanonicalModel,
                            sys::PSY.System;
                            kwargs...) where {B<:PSY.Branch,
                                              Br<:AbstractBranchFormulation,
-                                             S<:PM.AbstractPowerFormulation}
+                                             S<:PM.AbstractPowerModel}
 
     devices = PSY.get_components(B, sys)
 
@@ -49,7 +39,7 @@ function _internal_device_constructor!(canonical_model::CanonicalModel,
                            model::DeviceModel{PSY.MonitoredLine, FlowMonitoredLine},
                            ::Type{S},
                            sys::PSY.System;
-                           kwargs...) where {S<:PM.AbstractPowerFormulation}
+                           kwargs...) where {S<:PM.AbstractPowerModel}
 
     devices = PSY.get_components(PSY.MonitoredLine, sys)
 
@@ -76,17 +66,14 @@ function _internal_device_constructor!(canonical_model::CanonicalModel,
 
 end
 
-function _internal_device_constructor!(canonical_model::CanonicalModel,
-                                       model::DeviceModel{B, Br},
-                                       ::Type{S},
-                                       sys::PSY.System;
-                                       kwargs...) where {B<:PSY.Branch,
-                                                        Br<:Union{Type{StaticLineUnbounded}, Type{StaticTransformerUnbounded}},
-                                                        S<:PM.AbstractPowerFormulation}
-    # do nothing
-    return
-
-end
+ _internal_device_constructor!(canonical_model::CanonicalModel,
+                               model::DeviceModel{B, Br},
+                               ::Type{S},
+                               sys::PSY.System;
+                               kwargs...) where {B<:PSY.Branch,
+                                                 Br<:Union{Type{StaticLineUnbounded},
+                                                           Type{StaticTransformerUnbounded}},
+                                                 S<:PM.AbstractPowerModel} = nothing
 
 function _internal_device_constructor!(canonical_model::CanonicalModel,
                            model::DeviceModel{B, Br},
@@ -94,7 +81,7 @@ function _internal_device_constructor!(canonical_model::CanonicalModel,
                            sys::PSY.System;
                            kwargs...) where {Br<:AbstractBranchFormulation,
                                              B<:PSY.DCBranch,
-                                             S<:PM.AbstractPowerFormulation}
+                                             S<:PM.AbstractPowerModel}
 
     devices = PSY.get_components(B, sys)
 

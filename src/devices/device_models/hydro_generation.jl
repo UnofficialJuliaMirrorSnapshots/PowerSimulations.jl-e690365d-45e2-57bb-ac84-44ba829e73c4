@@ -1,16 +1,16 @@
-abstract type AbstractHydroFormulation<:AbstractDeviceFormulation end
+abstract type AbstractHydroFormulation <: AbstractDeviceFormulation end
 
-abstract type AbstractHydroDispatchForm<:AbstractHydroFormulation end
+abstract type AbstractHydroDispatchFormulation <: AbstractHydroFormulation end
 
-struct HydroFixed<:AbstractHydroFormulation end
+struct HydroFixed <: AbstractHydroFormulation end
 
-struct HydroDispatchRunOfRiver<:AbstractHydroDispatchForm end
+struct HydroDispatchRunOfRiver <: AbstractHydroDispatchFormulation end
 
-struct HydroDispatchSeasonalFlow<:AbstractHydroDispatchForm end
+struct HydroDispatchSeasonalFlow <: AbstractHydroDispatchFormulation end
 
-struct HydroCommitmentRunOfRiver<:AbstractHydroFormulation end
+struct HydroCommitmentRunOfRiver <: AbstractHydroFormulation end
 
-struct HydroCommitmentSeasonalFlow<:AbstractHydroFormulation end
+struct HydroCommitmentSeasonalFlow <: AbstractHydroFormulation end
 
 #=
 # hydro variables
@@ -69,8 +69,8 @@ function activepower_constraints(canonical_model::CanonicalModel,
                                   device_formulation::Type{D},
                                   system_formulation::Type{S},
                                   time_steps::UnitRange{Int64}) where {H<:PSY.HydroGen,
-                                                                       D<:AbstractHydroDispatchForm,
-                                                                       S<:PM.AbstractPowerFormulation}
+                                                                       D<:AbstractHydroDispatchFormulation,
+                                                                       S<:PM.AbstractPowerModel}
 
     range_data = [(PSY.get_name(h), PSY.get_tech(h) |> PSY.get_activepowerlimits) for h in devices]
 
@@ -86,7 +86,7 @@ function activepower_constraints(canonical_model::CanonicalModel,
                                  device_formulation::Type{HydroDispatchRunOfRiver},
                                  system_formulation::Type{S},
                                  time_steps::UnitRange{Int64}) where {H<:PSY.HydroGen,
-                                                                      S<:PM.AbstractPowerFormulation}
+                                                                      S<:PM.AbstractPowerModel}
 
     ts_data = [(PSY.get_name(h), values(PSY.get_scalingfactor(h))*(PSY.get_tech(h) |> PSY.get_rating)) for h in devices]
 
@@ -102,7 +102,7 @@ function activepower_constraints(canonical_model::CanonicalModel,
                                  device_formulation::Type{HydroDispatchSeasonalFlow},
                                  system_formulation::Type{S},
                                  time_steps::UnitRange{Int64}) where {H<:PSY.HydroGen,
-                                                                      S<:PM.AbstractPowerFormulation}
+                                                                      S<:PM.AbstractPowerModel}
 
     ts_data_ub = [(PSY.get_name(h), values(PSY.get_scalingfactor(h))*(PSY.get_tech(h) |> PSY.get_rating)) for h in devices]
     ts_data_lb = [(PSY.get_name(h), values(PSY.get_scalingfactor(h))*(PSY.get_tech(h) |> PSY.get_rating)) for h in devices]
@@ -123,8 +123,8 @@ function reactivepower_constraints(canonical_model::CanonicalModel,
                                    device_formulation::Type{D},
                                    system_formulation::Type{S},
                                    time_steps::UnitRange{Int64}) where {H<:PSY.HydroGen,
-                                                                        D<:AbstractHydroDispatchForm,
-                                                                        S<:PM.AbstractPowerFormulation}
+                                                                        D<:AbstractHydroDispatchFormulation,
+                                                                        S<:PM.AbstractPowerModel}
 
     range_data = [(PSY.get_name(g), PSY.get_tech(g) |> PSY.get_reactivepowerlimits) for g in devices]
 
@@ -141,7 +141,7 @@ function activepower_constraints(canonical_model::CanonicalModel,
                                  system_formulation::Type{S},
                                  time_steps::UnitRange{Int64}) where {H<:PSY.HydroGen,
                                                                       D<:AbstractHydroFormulation,
-                                                                      S<:PM.AbstractPowerFormulation}
+                                                                      S<:PM.AbstractPowerModel}
 
     range_data = [(PSY.get_name(g), PSY.get_tech(g) |> PSY.get_activepowerlimits) for g in devices]
 
@@ -158,7 +158,7 @@ function reactivepower_constraints(canonical_model::CanonicalModel,
                                    system_formulation::Type{S},
                                    time_steps::UnitRange{Int64}) where {H<:PSY.HydroGen,
                                                                         D<:AbstractHydroFormulation,
-                                                                        S<:PM.AbstractPowerFormulation}
+                                                                        S<:PM.AbstractPowerModel}
 
     range_data = [(PSY.get_name(g), PSY.get_tech(g) |> PSY.get_reactivepowerlimits) for g in devices]
 
