@@ -21,18 +21,18 @@ struct ThermalDispatchNoMin <: AbstractThermalDispatchFormulation end
 """
 This function add the variables for power generation output to the model
 """
-function activepower_variables!(canonical_model::CanonicalModel,
+function activepower_variables!(canonical::CanonicalModel,
                            devices::IS.FlattenIteratorWrapper{T}) where {T<:PSY.ThermalGen}
 
 
-    add_variable(canonical_model,
+    add_variable(canonical,
                  devices,
                  Symbol("P_$(T)"),
                  false,
                  :nodal_balance_active;
                  ub_value = d -> d.tech.activepowerlimits.max,
                  lb_value = d -> d.tech.activepowerlimits.min,
-                 init_value = d -> PSY.get_tech(d) |> PSY.get_activepower)
+                 init_value = d -> PSY.get_activepower(PSY.get_tech(d)))
 
     return
 
@@ -41,10 +41,10 @@ end
 """
 This function add the variables for power generation output to the model
 """
-function reactivepower_variables!(canonical_model::CanonicalModel,
+function reactivepower_variables!(canonical::CanonicalModel,
                            devices::IS.FlattenIteratorWrapper{T}) where {T<:PSY.ThermalGen}
 
-    add_variable(canonical_model,
+    add_variable(canonical,
                  devices,
                  Symbol("Q_$(T)"),
                  false,
@@ -60,14 +60,14 @@ end
 """
 This function add the variables for power generation commitment to the model
 """
-function commitment_variables!(canonical_model::CanonicalModel,
+function commitment_variables!(canonical::CanonicalModel,
                            devices::IS.FlattenIteratorWrapper{T}) where {T<:PSY.ThermalGen}
 
-    time_steps = model_time_steps(canonical_model)
+    time_steps = model_time_steps(canonical)
     var_names = [Symbol("ON_$(T)"), Symbol("START_$(T)"), Symbol("STOP_$(T)")]
 
     for v in var_names
-        add_variable(canonical_model, devices, v, true)
+        add_variable(canonical, devices, v, true)
     end
 
     return
@@ -77,16 +77,16 @@ end
 """
 This function adds the active power limits of generators when there are no CommitmentVariables
 """
-function activepower_constraints!(canonical_model::CanonicalModel,
+function activepower_constraints!(canonical::CanonicalModel,
                                  devices::IS.FlattenIteratorWrapper{T},
                                  device_formulation::Type{D},
                                  system_formulation::Type{S}) where {T<:PSY.ThermalGen,
                                                                      D<:AbstractThermalDispatchFormulation,
                                                                      S<:PM.AbstractPowerModel}
 
-    range_data = [(PSY.get_name(g), PSY.get_tech(g) |> PSY.get_activepowerlimits) for g in devices]
+    range_data = [(PSY.get_name(g),  PSY.get_activepowerlimits(PSY.get_tech(g))) for g in devices]
 
-    device_range(canonical_model,
+    device_range(canonical,
                  range_data,
                  Symbol("activerange_$(T)"),
                  Symbol("P_$(T)"))
@@ -97,15 +97,15 @@ end
 """
 This function adds the active power limits of generators when there are CommitmentVariables
 """
-function activepower_constraints!(canonical_model::CanonicalModel,
+function activepower_constraints!(canonical::CanonicalModel,
                                  devices::IS.FlattenIteratorWrapper{T},
                                  device_formulation::Type{D},
                                  system_formulation::Type{S}) where {T<:PSY.ThermalGen,
                                                                       D<:AbstractThermalFormulation,
                                                                       S<:PM.AbstractPowerModel}
 
-    range_data = [(PSY.get_name(g), PSY.get_tech(g) |> PSY.get_activepowerlimits) for g in devices]
-    device_semicontinuousrange(canonical_model,
+    range_data = [(PSY.get_name(g),  PSY.get_activepowerlimits(PSY.get_tech(g))) for g in devices]
+    device_semicontinuousrange(canonical,
                                range_data,
                                Symbol("activerange_$(T)"),
                                Symbol("P_$(T)"),
@@ -120,15 +120,15 @@ end
 This function adds the active power limits of generators when there are
     no CommitmentVariables
 """
-function activepower_constraints!(canonical_model::CanonicalModel,
+function activepower_constraints!(canonical::CanonicalModel,
                                   devices::IS.FlattenIteratorWrapper{T},
                                   device_formulation::Type{ThermalDispatchNoMin},
                                   system_formulation::Type{S}) where {T<:PSY.ThermalGen,
                                                                      S<:PM.AbstractPowerModel}
 
-    range_data = [(PSY.get_name(g), (min = 0.0, max=(PSY.get_tech(g) |> PSY.get_activepowerlimits).max)) for g in devices]
+    range_data = [(PSY.get_name(g), (min = 0.0, max=( PSY.get_activepowerlimits(PSY.get_tech(g))).max)) for g in devices]
     var_key = Symbol("P_$(T)")
-    variable = var(canonical_model, var_key)
+    variable = var(canonical, var_key)
 
     # If the variable was a lower bound != 0, not removing the LB can cause infeasibilities
     for v in variable
@@ -137,7 +137,7 @@ function activepower_constraints!(canonical_model::CanonicalModel,
         end
     end
 
-    device_range(canonical_model,
+    device_range(canonical,
                 range_data,
                 Symbol("activerange_$(T)"),
                 Symbol("P_$(T)")
@@ -150,16 +150,16 @@ end
 """
 This function adds the reactive  power limits of generators when there are CommitmentVariables
 """
-function reactivepower_constraints!(canonical_model::CanonicalModel,
+function reactivepower_constraints!(canonical::CanonicalModel,
                                    devices::IS.FlattenIteratorWrapper{T},
                                    device_formulation::Type{D},
                                    system_formulation::Type{S}) where {T<:PSY.ThermalGen,
                                                                        D<:AbstractThermalDispatchFormulation,
                                                                        S<:PM.AbstractPowerModel}
 
-    range_data = [(PSY.get_name(g), PSY.get_tech(g) |> PSY.get_reactivepowerlimits) for g in devices]
+    range_data = [(PSY.get_name(g),  PSY.get_reactivepowerlimits(PSY.get_tech(g))) for g in devices]
 
-    device_range(canonical_model,
+    device_range(canonical,
                  range_data ,
                  Symbol("reactiverange_$(T)"),
                  Symbol("Q_$(T)"))
@@ -171,16 +171,16 @@ end
 """
 This function adds the reactive power limits of generators when there CommitmentVariables
 """
-function reactivepower_constraints!(canonical_model::CanonicalModel,
+function reactivepower_constraints!(canonical::CanonicalModel,
                                    devices::IS.FlattenIteratorWrapper{T},
                                    device_formulation::Type{D},
                                    system_formulation::Type{S}) where {T<:PSY.ThermalGen,
                                                                         D<:AbstractThermalFormulation,
                                                                         S<:PM.AbstractPowerModel}
 
-    range_data = [(PSY.get_name(g), PSY.get_tech(g) |> PSY.get_reactivepowerlimits) for g in devices]
+    range_data = [(PSY.get_name(g),  PSY.get_reactivepowerlimits(PSY.get_tech(g))) for g in devices]
 
-    device_semicontinuousrange(canonical_model,
+    device_semicontinuousrange(canonical,
                                range_data,
                                Symbol("reactiverange_$(T)"),
                                Symbol("Q_$(T)"),
@@ -194,7 +194,7 @@ end
 """
 This function adds the Commitment Status constraint when there are CommitmentVariables
 """
-function commitment_constraints!(canonical_model::CanonicalModel,
+function commitment_constraints!(canonical::CanonicalModel,
                                  devices::IS.FlattenIteratorWrapper{T},
                                  device_formulation::Type{D},
                                  system_formulation::Type{S}) where {T<:PSY.ThermalGen,
@@ -203,12 +203,12 @@ function commitment_constraints!(canonical_model::CanonicalModel,
 
     key = ICKey(DeviceStatus, T)
 
-    if !(key in keys(canonical_model.initial_conditions))
+    if !(key in keys(canonical.initial_conditions))
         error("Initial status conditions not provided. This can lead to unwanted results")
     end
 
-    device_commitment(canonical_model,
-                     canonical_model.initial_conditions[key],
+    device_commitment(canonical,
+                     canonical.initial_conditions[key],
                      Symbol("commitment_$(T)"),
                      (Symbol("START_$(T)"),
                       Symbol("STOP_$(T)"),
@@ -220,26 +220,26 @@ function commitment_constraints!(canonical_model::CanonicalModel,
 end
 
 ########################## Make initial Conditions for a Model #############################
-function initial_conditions!(canonical_model::CanonicalModel,
+function initial_conditions!(canonical::CanonicalModel,
                             devices::IS.FlattenIteratorWrapper{T},
                             device_formulation::Type{D}) where {T<:PSY.ThermalGen,
                                                                 D<:AbstractThermalFormulation}
 
-    status_init(canonical_model, devices)
-    output_init(canonical_model, devices)
-    duration_init(canonical_model, devices)
+    status_init(canonical, devices)
+    output_init(canonical, devices)
+    duration_init(canonical, devices)
 
     return
 
 end
 
 
-function initial_conditions!(canonical_model::CanonicalModel,
+function initial_conditions!(canonical::CanonicalModel,
                             devices::IS.FlattenIteratorWrapper{T},
                             device_formulation::Type{D}) where {T<:PSY.ThermalGen,
                                                                 D<:AbstractThermalDispatchFormulation}
 
-    output_init(canonical_model, devices)
+    output_init(canonical, devices)
 
     return
 
@@ -301,7 +301,7 @@ end
 """
 This function adds the ramping limits of generators when there are CommitmentVariables
 """
-function ramp_constraints!(canonical_model::CanonicalModel,
+function ramp_constraints!(canonical::CanonicalModel,
                            devices::IS.FlattenIteratorWrapper{T},
                            device_formulation::Type{D},
                            system_formulation::Type{S}) where {T<:PSY.ThermalGen,
@@ -309,19 +309,19 @@ function ramp_constraints!(canonical_model::CanonicalModel,
                                                     S<:PM.AbstractPowerModel}
     key = ICKey(DevicePower, T)
 
-    if !(key in keys(canonical_model.initial_conditions))
+    if !(key in keys(canonical.initial_conditions))
         error("Initial Conditions for $(T) Rate of Change Constraints not in the model")
     end
 
-    time_steps = model_time_steps(canonical_model)
-    resolution = model_resolution(canonical_model)
-    initial_conditions = get_ini_cond(canonical_model, key)
+    time_steps = model_time_steps(canonical)
+    resolution = model_resolution(canonical)
+    initial_conditions = get_ini_cond(canonical, key)
     rate_data = _get_data_for_rocc(initial_conditions, resolution)
     ini_conds, ramp_params, minmax_params = _get_data_for_rocc(initial_conditions, resolution)
 
     if !isempty(ini_conds)
         # Here goes the reactive power ramp limits when versions for AC and DC are added
-        device_mixedinteger_rateofchange(canonical_model,
+        device_mixedinteger_rateofchange(canonical,
                                          (ramp_params, minmax_params),
                                          ini_conds,
                                          Symbol("ramp_$(T)"),
@@ -337,7 +337,7 @@ function ramp_constraints!(canonical_model::CanonicalModel,
 
 end
 
-function ramp_constraints!(canonical_model::CanonicalModel,
+function ramp_constraints!(canonical::CanonicalModel,
                           devices::IS.FlattenIteratorWrapper{T},
                           device_formulation::Type{D},
                           system_formulation::Type{S}) where {T<:PSY.ThermalGen,
@@ -346,19 +346,19 @@ function ramp_constraints!(canonical_model::CanonicalModel,
 
     key = ICKey(DevicePower, T)
 
-    if !(key in keys(canonical_model.initial_conditions))
+    if !(key in keys(canonical.initial_conditions))
         error("Initial Conditions for $(T) Rate of Change Constraints not in the model")
     end
 
-    time_steps = model_time_steps(canonical_model)
-    resolution = model_resolution(canonical_model)
-    initial_conditions = get_ini_cond(canonical_model, key)
+    time_steps = model_time_steps(canonical)
+    resolution = model_resolution(canonical)
+    initial_conditions = get_ini_cond(canonical, key)
     rate_data = _get_data_for_rocc(initial_conditions, resolution)
     ini_conds, ramp_params, minmax_params = _get_data_for_rocc(initial_conditions, resolution)
 
     if !isempty(ini_conds)
         # Here goes the reactive power ramp limits when versions for AC and DC are added
-        device_linear_rateofchange(canonical_model,
+        device_linear_rateofchange(canonical,
                                   ramp_params,
                                   ini_conds,
                                    Symbol("ramp_$(T)"),
@@ -420,7 +420,7 @@ function _get_data_for_tdc(initial_conditions_on::Vector{InitialCondition},
 
 end
 
-function time_constraints!(canonical_model::CanonicalModel,
+function time_constraints!(canonical::CanonicalModel,
                           devices::IS.FlattenIteratorWrapper{T},
                           device_formulation::Type{D},
                           system_formulation::Type{S}) where {T<:PSY.ThermalGen,
@@ -429,22 +429,22 @@ function time_constraints!(canonical_model::CanonicalModel,
 
     ic_keys = [ICKey(TimeDurationON, T), ICKey(TimeDurationOFF, T)]
     for key in ic_keys
-        if !(key in keys(canonical_model.initial_conditions))
+        if !(key in keys(canonical.initial_conditions))
             error("Initial Conditions for $(T) Time Constraint not in the model")
         end
     end
 
-    parameters = model_has_parameters(canonical_model)
-    resolution = model_resolution(canonical_model)
-    initial_conditions_on  = get_ini_cond(canonical_model, ic_keys[1])
-    initial_conditions_off = get_ini_cond(canonical_model, ic_keys[2])
+    parameters = model_has_parameters(canonical)
+    resolution = model_resolution(canonical)
+    initial_conditions_on  = get_ini_cond(canonical, ic_keys[1])
+    initial_conditions_off = get_ini_cond(canonical, ic_keys[2])
     ini_conds, time_params = _get_data_for_tdc(initial_conditions_on,
                                                initial_conditions_off,
                                                resolution)
 
     if !(isempty(ini_conds))
        if parameters
-            device_duration_param(canonical_model,
+            device_duration_param(canonical,
                                 time_params,
                                 ini_conds,
                                 Symbol("duration_$(T)"),
@@ -453,7 +453,7 @@ function time_constraints!(canonical_model::CanonicalModel,
                                 Symbol("STOP_$(T)"))
                                       )
         else
-            device_duration_retrospective(canonical_model,
+            device_duration_retrospective(canonical,
                                         time_params,
                                         ini_conds,
                                         Symbol("duration_$(T)"),
@@ -472,14 +472,14 @@ end
 
 ########################### Cost Function Calls#############################################
 
-function cost_function(canonical_model::CanonicalModel,
+function cost_function(canonical::CanonicalModel,
                        devices::IS.FlattenIteratorWrapper{T},
                        ::Type{D},
                        ::Type{S}) where {T<:PSY.ThermalGen,
                                          D<:AbstractThermalDispatchFormulation,
                                          S<:PM.AbstractPowerModel}
 
-    add_to_cost(canonical_model,
+    add_to_cost(canonical,
                 devices,
                 Symbol("P_$(T)"),
                 :variable)
@@ -489,7 +489,7 @@ function cost_function(canonical_model::CanonicalModel,
 end
 
 
-function cost_function(canonical_model::CanonicalModel,
+function cost_function(canonical::CanonicalModel,
                        devices::IS.FlattenIteratorWrapper{T},
                        ::Type{D},
                        ::Type{S}) where {T<:PSY.ThermalGen,
@@ -497,12 +497,12 @@ function cost_function(canonical_model::CanonicalModel,
                                          S<:PM.AbstractPowerModel}
 
     #Variable Cost component
-    add_to_cost(canonical_model, devices, Symbol("P_$(T)"), :variable)
+    add_to_cost(canonical, devices, Symbol("P_$(T)"), :variable)
 
     #Commitment Cost Components
-    add_to_cost(canonical_model, devices, Symbol("START_$(T)"), :startup)
-    add_to_cost(canonical_model, devices, Symbol("STOP_$(T)"), :shutdn)
-    add_to_cost(canonical_model, devices, Symbol("ON_$(T)"), :fixed)
+    add_to_cost(canonical, devices, Symbol("START_$(T)"), :startup)
+    add_to_cost(canonical, devices, Symbol("STOP_$(T)"), :shutdn)
+    add_to_cost(canonical, devices, Symbol("ON_$(T)"), :fixed)
 
     return
 
